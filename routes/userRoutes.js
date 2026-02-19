@@ -50,6 +50,22 @@ router.post('/test-email', async (req, res) => {
   }
 });
 
+// GET test endpoint for browser access
+router.get('/test-email', async (req, res) => {
+  try {
+    await sendEmail({
+      email: 'test@example.com',
+      subject: 'Test Email (GET)',
+      message: 'This is a test email from GET request',
+      html: '<h1>Test Email</h1><p>This is a test email from the system (GET request).</p>'
+    });
+    res.json({ success: true, message: 'Test email sent via GET' });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ success: false, message: 'Test email failed', error: error.message });
+  }
+});
+
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/change-password', protect, changePassword);
