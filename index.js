@@ -52,6 +52,11 @@ app.use(
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Default route - serve admin.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // API Routes
 app.use("/api/auth", userRoutes);
 
