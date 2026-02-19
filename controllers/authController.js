@@ -48,7 +48,7 @@ export const registerUser = async (req, res) => {
       },
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || "MyAPP_Rohit", {
+    const token = jwt.sign(payload, process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key", {
       expiresIn: "7d",
     });
 
@@ -704,6 +704,33 @@ export const createUserByAdmin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error during user creation",
+    });
+  }
+};
+
+// @desc    Get user by ID
+// @route   GET /api/auth/users/:id
+// @access  Private (Admin only)
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Get user error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
