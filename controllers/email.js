@@ -9,7 +9,7 @@ const sendEmail = async (options) => {
     service: 'Gmail', // or your email service (e.g., 'Outlook', 'Yahoo', etc.)
     auth: {
       user: "kanwar.rohit2905@gmail.com", // Your email
-      pass: process.env.EMAIL_PASSWORD // Your email password or app password
+      pass: "srni jtcf mxnj vzzy" // Your email password or app password
     },
   });
 
@@ -34,7 +34,18 @@ const sendEmail = async (options) => {
   } catch (error) {
     console.error('Error sending email:', error);
     console.error('Error details:', error.message);
-    throw new Error('Failed to send email');
+    
+    // Provide specific error messages based on error type
+    if (error.code === 'EAUTH') {
+      console.error('Authentication failed - Check email credentials');
+      throw new Error('Email authentication failed. Please check email settings.');
+    } else if (error.code === 'ECONNECTION') {
+      console.error('Connection failed - Check network or email service');
+      throw new Error('Email service connection failed.');
+    } else {
+      console.error('Unknown email error:', error);
+      throw new Error('Failed to send email: ' + error.message);
+    }
   }
 };
 

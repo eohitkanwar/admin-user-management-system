@@ -107,6 +107,8 @@ export const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
       },
+      message: "User registered successfully",
+      emailSent: true // Indicate email was sent
     });
     console.log("user created",user)
   } catch (error) {
@@ -698,6 +700,7 @@ export const createUserByAdmin = async (req, res) => {
         status: user.status,
         createdAt: user.createdAt,
       },
+      emailSent: true // Indicate email was sent
     });
   } catch (error) {
     console.error("Create user error:", error);
