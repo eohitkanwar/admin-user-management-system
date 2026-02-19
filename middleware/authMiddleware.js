@@ -33,7 +33,33 @@ export const protect = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("JWT ERROR:", error);
-    return res.status(401).json({ message: "Invalid token" });
+    
+    // Handle different JWT errors with specific messages
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        success: false,
+        message: "Invalid token format",
+        error: "JWT malformed"
+      });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false,
+        message: "Token expired",
+        error: "Please login again"
+      });
+    } else if (error.name === 'NotBeforeError') {
+      return res.status(401).json({ 
+        success: false,
+        message: "Token not active",
+        error: "Token not yet valid"
+      });
+    } else {
+      return res.status(401).json({ 
+        success: false,
+        message: "Token verification failed",
+        error: error.message
+      });
+    }
   }
 };
 
