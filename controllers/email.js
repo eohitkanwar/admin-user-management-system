@@ -9,7 +9,7 @@ const sendEmail = async (options) => {
     service: 'Gmail', // or your email service (e.g., 'Outlook', 'Yahoo', etc.)
     auth: {
       user: "kanwar.rohit2905@gmail.com", // Your email
-      pass: "srni jtcf mxnj vzzy" // Your email password or app password
+      pass: process.env.EMAIL_PASSWORD // Your email password or app password
     },
   });
 
