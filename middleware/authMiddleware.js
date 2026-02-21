@@ -5,14 +5,18 @@ export const protect = async (req, res, next) => {
   try {
     let token;
 
+    console.log("Auth middleware - Headers:", req.headers.authorization);
+
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+      console.log("Auth middleware - Token extracted:", token ? "Present" : "Missing");
     }
 
     if (!token) {
+      console.log("Auth middleware - No token found");
       return res.status(401).json({ message: "Not authorized, no token" });
     }
 
@@ -27,9 +31,11 @@ export const protect = async (req, res, next) => {
     req.user = await User.findById(decoded.user.id).select("-password");
 
     if (!req.user) {
+      console.log("Auth middleware - User not found in database");
       return res.status(401).json({ message: "User not found" });
     }
 
+    console.log("Auth middleware - User authenticated:", req.user.username, "Role:", req.user.role);
     next();
   } catch (error) {
     console.error("JWT ERROR:", error);
@@ -65,8 +71,27 @@ export const protect = async (req, res, next) => {
 
 
 export const adminOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({ message: "Admin access only you are unauthorize" });
+  console.log("Admin check - User:", req.user ? req.user.username : 'No user');
+  console.log("Admin check - Role:", req.user ? req.user.role : 'No role');
+  
+  if (!req.user) {
+    console.log("Admin check failed: No user found");
+    return res.status(403).json({ 
+      success: false,
+      message: "User not authenticated",
+      error: "Please login first"
+    });
   }
+  
+  if (req.user.role !== "admin") {
+    console.log("Admin check failed: User is not admin");
+    return res.status(403).json({ 
+      success: false,
+      message: "Admin access only you are unauthorize",
+      error: `User role: ${req.user.role}, Required: admin`
+    });
+  }
+  
+  console.log("Admin check passed");
   next();
 };
