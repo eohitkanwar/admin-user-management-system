@@ -5,7 +5,9 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/admin-user-management');
+    // Try environment variable first, then fallback to local MongoDB
+    const mongoUri = process.env.MONGODB_URI ;
+    await mongoose.connect(mongoUri);
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error);
