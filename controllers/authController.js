@@ -286,7 +286,7 @@ export const resetPassword = async (req, res) => {
   try {
     console.log("URL TOKEN:", req.params.resettoken);
 
-    const { resettoken } = req.params;
+    const resettoken = req.params.resettoken;
     const { password } = req.body;
     console.log("resettoken", resettoken);
     console.log("password", password);
