@@ -372,18 +372,20 @@ export const getAllUsers = async (req, res) => {
     const usePagination = req.query.page || req.query.limit;
     const search = req.query.search || "";
 
+    console.log("🔍 getAllUsers called with:", { page, limit, usePagination, search });
+
     if (usePagination) {
       // Pagination logic
       const skip = (page - 1) * limit;
       
       // Build search query
       let searchQuery = {};
-      if (search) {
+      if (search && search.trim()) {
         searchQuery = {
           $or: [
-            { username: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
-            { role: { $regex: search, $options: 'i' } }
+            { username: { $regex: search.trim(), $options: 'i' } },
+            { email: { $regex: search.trim(), $options: 'i' } },
+            { role: { $regex: search.trim(), $options: 'i' } }
           ]
         };
       }
@@ -400,6 +402,8 @@ export const getAllUsers = async (req, res) => {
       const hasNextPage = page < totalPages;
       const hasPrevPage = page > 1;
 
+      console.log("✅ Users fetched successfully:", users.length, "users");
+
       return res.status(200).json({
         success: true,
         count: users.length,
@@ -413,17 +417,19 @@ export const getAllUsers = async (req, res) => {
     } else {
       // Original format for backward compatibility
       let searchQuery = {};
-      if (search) {
+      if (search && search.trim()) {
         searchQuery = {
           $or: [
-            { username: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
-            { role: { $regex: search, $options: 'i' } }
+            { username: { $regex: search.trim(), $options: 'i' } },
+            { email: { $regex: search.trim(), $options: 'i' } },
+            { role: { $regex: search.trim(), $options: 'i' } }
           ]
         };
       }
       
       const users = await User.find(searchQuery).select("-password");
+
+      console.log("✅ Users fetched successfully (no pagination):", users.length, "users");
 
       res.status(200).json({
         success: true,
@@ -432,10 +438,11 @@ export const getAllUsers = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Get all users error:", error);
+    console.error("❌ Get all users error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
+      error: error.message
     });
   }
 };
