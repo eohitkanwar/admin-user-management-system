@@ -71,11 +71,15 @@ export const protect = async (req, res, next) => {
 
 
 export const adminOnly = (req, res, next) => {
+  console.log("=== ADMIN CHECK START ===");
+  console.log("Admin check - User exists:", !!req.user);
   console.log("Admin check - User:", req.user ? req.user.username : 'No user');
   console.log("Admin check - Role:", req.user ? req.user.role : 'No role');
+  console.log("Admin check - Role type:", typeof req.user?.role);
+  console.log("Admin check - Role value:", JSON.stringify(req.user?.role));
   
   if (!req.user) {
-    console.log("Admin check failed: No user found");
+    console.log("❌ Admin check failed: No user found");
     return res.status(403).json({ 
       success: false,
       message: "User not authenticated",
@@ -83,8 +87,12 @@ export const adminOnly = (req, res, next) => {
     });
   }
   
+  console.log("Checking role:", req.user.role, "=== admin?");
+  console.log("Role comparison:", req.user.role === "admin");
+  
   if (req.user.role !== "admin") {
-    console.log("Admin check failed: User is not admin");
+    console.log("❌ Admin check failed: User is not admin");
+    console.log("❌ Expected: 'admin', Got:", req.user.role);
     return res.status(403).json({ 
       success: false,
       message: "Admin access only you are unauthorize",
@@ -92,6 +100,7 @@ export const adminOnly = (req, res, next) => {
     });
   }
   
-  console.log("Admin check passed");
+  console.log("✅ Admin check passed - User is admin");
+  console.log("=== ADMIN CHECK END ===");
   next();
 };
