@@ -146,7 +146,13 @@ export const loginUser = async (req, res) => {
     // Check if user exists
     const users = await User.findOne({ email: bodyData.email });
 
-    console.log("isUserExist", users);
+    console.log("🔍 Login Debug - Email searched:", bodyData.email);
+    console.log("🔍 Login Debug - User found:", users ? 'YES' : 'NO');
+    if (users) {
+        console.log("🔍 Login Debug - User ID:", users._id);
+        console.log("🔍 Login Debug - User Role:", users.role);
+        console.log("🔍 Login Debug - User Email:", users.email);
+    }
     if (!users) {
       console.log("User Not Exist Kindly Register Your Account");
       return res.status(401).json({
