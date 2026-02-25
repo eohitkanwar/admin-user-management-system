@@ -1,9 +1,8 @@
-// Test fresh login and then test users API
+// Test admin login and user management
 import fetch from 'node-fetch';
 
-console.log('🧪 Testing fresh login...');
+console.log('🔑 Testing admin login...');
 
-// First login to get fresh token
 const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
     method: 'POST',
     headers: {
@@ -18,27 +17,29 @@ const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
 const loginData = await loginResponse.json();
 console.log('📊 Login Response:', loginData);
 
-if (loginData.success && loginData.token) {
-    console.log('✅ Login successful, got new token');
+if (loginData.success && loginData.user.role === 'admin') {
+    console.log('✅ Admin login successful!');
     
-    // Now test users API with fresh token
+    // Test users API
+    console.log('👥 Testing users API...');
     const usersResponse = await fetch('http://localhost:5000/api/auth/users', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${loginData.token}`
         }
     });
     
     const usersData = await usersResponse.json();
     console.log('📊 Users API Response:', usersData);
-    console.log('📊 Users API Status:', usersResponse.status);
     
     if (usersData.success) {
-        console.log('✅ Users API working correctly');
+        console.log('🎉 SUCCESS! User management is working');
+        console.log('📊 Total users:', usersData.count);
+        console.log('✅ Frontend can now load users from backend');
     } else {
         console.log('❌ Users API failed:', usersData.message);
     }
 } else {
-    console.log('❌ Login failed:', loginData.message);
+    console.log('❌ Admin login failed');
+    console.log('Expected role: admin, Got role:', loginData.user?.role);
 }
