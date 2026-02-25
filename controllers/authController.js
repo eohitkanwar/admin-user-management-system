@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import mongoose from "mongoose";
 import sendEmail from "./email.js";
 
 export const registerUser = async (req, res) => {
@@ -51,6 +52,7 @@ export const registerUser = async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key", {
       expiresIn: "7d",
     });
+    console.log("=----==",token)
 
     // Send welcome email with credentials
     console.log("🔔 EMAIL SENDING: Starting email sending process for:", user.email);
@@ -521,6 +523,10 @@ export const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
 
+    console.log("🗑️ DELETE USER - userID:", userId);
+    console.log("🗑️ DELETE USER - req.user.id:", req.user.id);
+    console.log("🗑️ DELETE USER - Request received");
+
     // ❌ Admin khud ko delete na kar sake (optional but recommended)
     if (req.user.id === userId) {
       return res.status(400).json({
@@ -529,23 +535,40 @@ export const deleteUser = async (req, res) => {
       });
     }
 
+    console.log("🗑️ DELETE USER - Finding user in database...");
+    console.log("🗑️ DELETE USER - Database connection state:", mongoose.connection.readyState);
+    console.log("🗑️ DELETE USER - Database name:", mongoose.connection.name);
+    
     const user = await User.findById(userId);
+    console.log("🗑️ DELETE USER - Query result:", user ? 'FOUND' : 'NOT FOUND');
+    
+    if (user) {
+      console.log("🗑️ DELETE USER - Found user details:", {
+        id: user._id,
+        username: user.username,
+        email: user.email
+      });
+    }
 
     if (!user) {
+      console.log("❌ DELETE USER - User not found in database");
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
+    console.log("✅ DELETE USER - User found:", user.username, user.email);
+    console.log("🗑️ DELETE USER - Deleting user...");
     await User.findByIdAndDelete(userId);
 
+    console.log("✅ DELETE USER - User deleted successfully");
     res.status(200).json({
       success: true,
       message: "User deleted successfully",
     });
   } catch (error) {
-    console.error("Delete user error:", error);
+    console.error("❌ Delete user error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
