@@ -5,35 +5,37 @@ dotenv.config();
 
 const sendEmail = async (options) => {
   try {
-    // Create reusable transporter object using the SMTP transport
+    // Create reusable transporter object using SMTP transport
     const transporter = nodemailer.createTransport({
-      service: 'Gmail', // or your email service (e.g., 'Outlook', 'Yahoo', etc.)
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
       auth: {
-
         user: process.env.EMAIL_USERNAME, // Your email
-        pass: process.env.EMAIL_PASSWORD // Your email password or app password (for development only)
+        pass: process.env.EMAIL_PASSWORD // Your email password or app password
       },
     });
 
-    console.log("transporter", transporter);
+    console.log("📧 Email transporter created for:", process.env.EMAIL_USERNAME);
 
     // Send mail with defined transport object
     const mailOptions = {
-      from: `"Your App Name" <kanwar.rohit2905@gmail.com>`, // Use your email directly
+      from: `"Admin System" <${process.env.EMAIL_USERNAME}>`,
       to: options.email,       
       subject: options.subject,
       text: options.message,
       html: options.html,
     };
     
-    console.log("Mail options:", mailOptions);
+    console.log("📧 Sending email to:", options.email);
+    console.log("📧 Email subject:", options.subject);
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Message sent: %s', info.messageId);
-    console.log('Email sent successfully to:', options.email);
-    return info;
+    console.log('✅ Message sent: %s', info.messageId);
+    console.log('✅ Email sent successfully to:', options.email);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Email sending failed (non-blocking):', error.message);
+    console.error('❌ Email sending failed:', error.message);
     console.log('⚠️ Email failed but continuing with user creation...');
     // Don't throw error, just log it and continue
     return { success: false, message: 'Email failed but user creation continued' };

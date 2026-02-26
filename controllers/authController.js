@@ -57,9 +57,13 @@ export const registerUser = async (req, res) => {
     // Send welcome email with credentials
     console.log("🔔 EMAIL SENDING: Starting email sending process for:", user.email);
     console.log("🔔 EMAIL SENDING: sendEmail function available:", typeof sendEmail);
+    console.log("🔧 EMAIL CONFIG: EMAIL_USERNAME:", process.env.EMAIL_USERNAME);
+    console.log("🔧 EMAIL CONFIG: EMAIL_PASSWORD exists:", !!process.env.EMAIL_PASSWORD);
+    
+    
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
-      await sendEmail({
+      emailResult = await sendEmail({
         email: user.email,
         subject: "Welcome! Your Account Has Been Created",
         message: `Dear ${user.username},\n\nYour account has been successfully created. Here are your login credentials:\n\nUsername: ${user.username}\nEmail: ${user.email}\nPassword: ${password}\nRole: ${user.role}\n\nLogin URL: http://localhost:3000/login\n\nSecurity Notice: Please keep your credentials secure and change your password after first login.\n\nIf you have any questions or need assistance, please contact our support team.`,
@@ -92,11 +96,18 @@ export const registerUser = async (req, res) => {
           </div>
         `,
       });
+      
       console.log("✅ Welcome email sent successfully to:", user.email);
+      console.log("📧 EMAIL RESULT:", emailResult);
+      console.log("📧 EMAIL SUCCESS: MessageId:", emailResult?.messageId);
+      console.log("------------------", sendEmail);
     } catch (emailError) {
       console.error("❌ Failed to send welcome email:", emailError);
       console.error("❌ Email error details:", emailError.message);
-      // Continue with registration even if email fails
+      console.log("======error", emailError.message);
+      console.log("📧 EMAIL ERROR TYPE:", emailError.code);
+      console.log("📧 EMAIL ERROR STACK:", emailError.stack);
+      emailResult = { success: false, message: 'Email failed but user creation continued' };
     }
 
     // Response
@@ -110,7 +121,7 @@ export const registerUser = async (req, res) => {
         role: user.role,
       },
       message: "User registered successfully",
-      emailSent: true // Indicate email was sent
+      emailSent: emailResult?.success || false // Show actual email status
     });
     console.log("user created",user)
   } catch (error) {
@@ -374,6 +385,11 @@ export const resetPassword = async (req, res) => {
 // @access  Private
 export const getAllUsers = async (req, res) => {
   try {
+    // Add cache control headers to prevent caching
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     // Check if pagination parameters are provided
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -421,6 +437,7 @@ export const getAllUsers = async (req, res) => {
         hasNextPage,
         hasPrevPage,
         users,
+        timestamp: new Date().toISOString(), // Add timestamp to prevent caching
       });
     } else {
       // Original format for backward compatibility
@@ -443,6 +460,7 @@ export const getAllUsers = async (req, res) => {
         success: true,
         count: users.length,
         users,
+        timestamp: new Date().toISOString(), // Add timestamp to prevent caching
       });
     }
   } catch (error) {
@@ -638,140 +656,3 @@ export const changePassword = async (req, res) => {
 // @desc    Create user by admin
 // @route   POST /api/auth/create-user
 // @access  Private (Admin only)
-export const createUserByAdmin = async (req, res) => {
-  try {
-    const { username, email, password, role } = req.body;
-
-    // Validate input
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Username, email, and password are required",
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User already exists with this email",
-      });
-    }
-
-    // Check if username already exists
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({
-        success: false,
-        message: "Username already exists",
-      });
-    }
-
-    // Set role (default to 'user' if not specified)
-    const userRole = role || 'user';
-
-    // Create user
-    const user = await User.create({
-      username,
-      email,
-      password,
-      role: userRole,
-    });
-
-    // Send welcome email with credentials
-    console.log("Attempting to send welcome email to:", user.email);
-    try {
-      await sendEmail({
-        email: user.email,
-        subject: "Welcome! Your Account Has Been Created",
-        message: `Dear ${user.username},\n\nYour account has been successfully created. Here are your login credentials:\n\nUsername: ${user.username}\nEmail: ${user.email}\nPassword: ${password}\nRole: ${user.role}\n\nLogin URL: http://localhost:3000/login\n\nSecurity Notice: Please keep your credentials secure and change your password after first login.\n\nIf you have any questions or need assistance, please contact our support team.`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333; text-align: center;">Welcome to Our System!</h2>
-            <p>Dear <strong>${user.username}</strong>,</p>
-            <p>Your account has been successfully created. Here are your login credentials:</p>
-            
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #333; margin-top: 0;">Account Details:</h3>
-              <p><strong>Username:</strong> ${user.username}</p>
-              <p><strong>Email:</strong> ${user.email}</p>
-              <p><strong>Password:</strong> ${password}</p>
-              <p><strong>Role:</strong> ${user.role}</p>
-            </div>
-            
-            <p><strong>Login URL:</strong> <a href="http://localhost:3000/login" style="color: #007bff;">http://localhost:3000/login</a></p>
-            
-            <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-              <p style="margin: 0;"><strong>Security Notice:</strong> Please keep your credentials secure and change your password after first login.</p>
-            </div>
-            
-            <p>If you have any questions or need assistance, please contact our support team.</p>
-            
-            <hr style="border: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              This is an automated message. Please do not reply to this email.
-            </p>
-          </div>
-        `,
-      });
-      console.log("✅ Welcome email sent successfully to:", user.email);
-    } catch (emailError) {
-      console.error("❌ Failed to send welcome email:", emailError);
-      console.error("❌ Email error details:", emailError.message);
-      // Continue with user creation even if email fails
-    }
-
-    // Remove password from output
-    user.password = undefined;
-
-    res.status(201).json({
-      success: true,
-      message: "User created successfully! Welcome email sent.",
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        createdAt: user.createdAt,
-      },
-      emailSent: true // Indicate email was sent
-    });
-  } catch (error) {
-    console.error("Create user error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during user creation",
-    });
-  }
-};
-
-// @desc    Get user by ID
-// @route   GET /api/auth/users/:id
-// @access  Private (Admin only)
-export const getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      user,
-    });
-  } catch (error) {
-    console.error("Get user error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-};
-
-// Export all auth controller functions

@@ -8,10 +8,10 @@ import {
   resetPassword,
   deleteUser,
   updateProfile,
-  createUserByAdmin
+  
 
 } from '../controllers/authController.js';
-import { getAllUsers,updateUser, getUserById } from "../controllers/authController.js";
+import { getAllUsers,updateUser, } from "../controllers/authController.js";
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 import sendEmail from '../controllers/email.js';
 
@@ -20,9 +20,9 @@ const router = express.Router();
 // Public routes
 // routes/authRoutes.js
 router.get("/users", protect, adminOnly, getAllUsers);
-router.get("/users/:id", protect, adminOnly, getUserById);
-router.post("/create-user", protect, adminOnly, createUserByAdmin);
-router.post("/users", protect, adminOnly, createUserByAdmin); // Alternative endpoint
+router.get("/users/:id", protect, adminOnly, );
+router.post("/create-user", protect, adminOnly, );
+router.post("/users", protect, adminOnly, ); // Alternative endpoint
 router.put("/users/:id", protect, adminOnly, updateUser);
 router.delete("/users/:id", protect, adminOnly, deleteUser);
 
