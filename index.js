@@ -28,7 +28,7 @@ const __dirname = path.dirname(__filename);
 
 // Middleware
 
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors());
 
 app.use(morgan("dev"));
 
