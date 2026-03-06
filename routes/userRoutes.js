@@ -12,16 +12,6 @@ import {
 import { getAllUsers,updateUser, getUserById } from "../controllers/authController.js";
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 import sendEmail from '../controllers/email.js';
-import { 
-  validate, 
-  registerUserSchema, 
-  loginUserSchema,  
-  changePasswordSchema, 
-  forgotPasswordSchema, 
-  resetPasswordSchema, 
-  
-
-} from '../validators/userValidator.js';
 
 const router = express.Router();
 
@@ -29,22 +19,22 @@ const router = express.Router();
 // routes/authRoutes.js
 router.get("/users", protect, adminOnly,  getAllUsers);
 router.get("/users/:id", protect, adminOnly, getUserById);
-router.post("/create-user", protect, adminOnly, validate(registerUserSchema), registerUser);
-router.post("/users", protect, adminOnly, validate(registerUserSchema), registerUser); // Alternative endpoint
+router.post("/create-user", protect, adminOnly, registerUser);
+router.post("/users", protect, adminOnly, registerUser); // Alternative endpoint
 router.put("/users/:id", protect, adminOnly, updateUser);
 router.delete("/users/:id", protect, adminOnly,  deleteUser);
 
 router.put("/profile", protect, updateProfile);
 
 // Public authentication routes
-router.post('/register', validate(registerUserSchema), registerUser);
-router.post('/login', validate(loginUserSchema), loginUser);
-router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
-router.put('/reset-password/:resettoken', validate(resetPasswordSchema), resetPassword);
+router.post('/register', registerUser);
+router.post('/login', loginUser);
+router.post('/forgot-password', forgotPassword);
+router.put('/reset-password/:resettoken', resetPassword);
 
 // Protected routes
 router.get('/me', protect, getMe);
-router.put('/change-password', protect, validate(changePasswordSchema), changePassword);
+router.put('/change-password', protect, changePassword);
 
 // Test email endpoint
 router.post('/test-email', async (req, res) => {
