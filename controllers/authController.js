@@ -472,6 +472,62 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
+// @desc    Get user by ID
+// @route   GET /api/auth/users/:id
+// @access  Private (Admin)
+export const getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    console.log("🔍 getUserById called with userId:", userId);
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    }
+
+    // Find user by ID
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      console.log("❌ User not found with ID:", userId);
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    console.log("✅ User found:", user.username, user.email);
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        bio: user.bio,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        lastLogin: user.lastLogin,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Get user by ID error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
 export const updateUser = async (req, res) => {
   try {
     const { username, email } = req.body;
