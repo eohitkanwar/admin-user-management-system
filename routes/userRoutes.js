@@ -1,4 +1,5 @@
 import express from 'express';
+import userValidation from '../validators/userValidator.js';
 import { 
   registerUser, 
   loginUser, 
@@ -17,12 +18,12 @@ const router = express.Router();
 
 // Public routes
 // routes/authRoutes.js
-router.get("/users", protect, adminOnly,  getAllUsers);
-router.get("/users/:id", protect, adminOnly, getUserById);
-router.post("/create-user", protect, adminOnly, registerUser);
-router.post("/users", protect, adminOnly, registerUser); // Alternative endpoint
-router.put("/users/:id", protect, adminOnly, updateUser);
-router.delete("/users/:id", protect, adminOnly,  deleteUser);
+router.get("/users", protect, adminOnly,userValidation,  getAllUsers);
+router.get("/users/:id", protect, adminOnly,userValidation, getUserById);
+router.post("/create-user", protect, adminOnly,userValidation, registerUser);
+router.post("/users", protect, adminOnly,userValidation, registerUser); // Alternative endpoint
+router.put("/users/:id", protect, adminOnly,userValidation, updateUser);
+router.delete("/users/:id", protect, adminOnly,userValidation,  deleteUser);
 
 router.put("/profile", protect, updateProfile);
 
