@@ -1,5 +1,5 @@
 import express from 'express';
-import userValidation from '../validators/userValidator.js';
+import { userValidation } from '../validators/userValidator.js';
 import { 
   registerUser, 
   loginUser, 
