@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
-app.use("/auth", userRoutes);
+app.use("/api/auth", userRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
