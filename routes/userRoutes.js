@@ -15,25 +15,24 @@ import sendEmail from '../controllers/email.js';
 import { 
   validate, 
   registerUserSchema, 
-  loginUserSchema, 
-  updateUserSchema, 
+  loginUserSchema,  
   changePasswordSchema, 
   forgotPasswordSchema, 
   resetPasswordSchema, 
-  objectIdSchema, 
-  paginationSchema 
+  
+
 } from '../validators/userValidator.js';
 
 const router = express.Router();
 
 // Public routes
 // routes/authRoutes.js
-router.get("/users", protect, adminOnly, validate(paginationSchema, 'query'), getAllUsers);
+router.get("/users", protect, adminOnly,  getAllUsers);
 router.get("/users/:id", protect, adminOnly, getUserById);
 router.post("/create-user", protect, adminOnly, validate(registerUserSchema), registerUser);
 router.post("/users", protect, adminOnly, validate(registerUserSchema), registerUser); // Alternative endpoint
-router.put("/users/:id", protect, adminOnly, validate(objectIdSchema, 'params'), validate(updateUserSchema), updateUser);
-router.delete("/users/:id", protect, adminOnly, validate(objectIdSchema, 'params'), deleteUser);
+router.put("/users/:id", protect, adminOnly, updateUser);
+router.delete("/users/:id", protect, adminOnly,  deleteUser);
 
 router.put("/profile", protect, updateProfile);
 
