@@ -52,10 +52,10 @@ export const loginUserSchema = Joi.object({
 export const userValidation = (req, res, next) => {
   try {
     const validationSchema = Joi.object({
-      name: Joi.string().required(),
-      age: Joi.number().min(18).required(),
+      username: Joi.string().min(3).max(30).required(),
       email: Joi.string().lowercase().email().required(),
-      password: Joi.string().min(4).required(),
+      password: Joi.string().min(6).required(),
+      role: Joi.string().valid("user", "admin").optional(),
     });
     
     const { error } = validationSchema.validate(req.body, { abortEarly: false });
