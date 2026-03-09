@@ -60,7 +60,7 @@ export const registerUser = async (req, res) => {
     console.log("🔧 EMAIL CONFIG: EMAIL_USERNAME:", process.env.EMAIL_USERNAME);
     console.log("🔧 EMAIL CONFIG: EMAIL_PASSWORD exists:", !!process.env.EMAIL_PASSWORD);
     
-    
+    let emailResult;
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
       emailResult = await sendEmail({
