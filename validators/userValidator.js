@@ -53,14 +53,22 @@ export const userValidation = (req, res, next) => {
   try {
     const validationSchema = Joi.object({
       username: Joi.string().min(3).max(30).required(),
-      email: Joi.string().lowercase().email().required(),
+      email: Joi.string().lowercase().pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/).required().messages({
+        'string.pattern.base': 'Please enter a valid email address'
+      }),
       password: Joi.string().min(6).required(),
       role: Joi.string().valid("user", "admin").optional(),
     });
     
     const { error } = validationSchema.validate(req.body, { abortEarly: false });
     if (error) {
-      return res.status(400).json(error.details);
+      // Return user-friendly error messages
+      const errorMessages = error.details.map(detail => detail.message);
+      return res.status(400).json({ 
+        success: false, 
+        message: errorMessages[0], // Return first error message
+        errors: errorMessages // Return all errors for debugging
+      });
     }
     next();
   } catch (error) {

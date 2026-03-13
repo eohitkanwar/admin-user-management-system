@@ -28,7 +28,7 @@ router.delete("/users/:id", protect, adminOnly,userValidation,  deleteUser);
 router.put("/profile", protect, updateProfile);
 
 // Public authentication routes
-router.post('/register',registerUser);
+router.post('/register', userValidation, registerUser);
 router.post('/login', loginUser);
 router.post('/forgot-password',forgotPassword);
 router.put('/reset-password/:resettoken', resetPassword);
