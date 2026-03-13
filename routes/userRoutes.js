@@ -29,8 +29,8 @@ router.put("/profile", protect, updateProfile);
 
 // Public authentication routes
 router.post('/register',registerUser);
-router.post('/login',userValidation, loginUser);
-router.post('/forgot-password', userValidation ,forgotPassword);
+router.post('/login', loginUser);
+router.post('/forgot-password',forgotPassword);
 router.put('/reset-password/:resettoken', resetPassword);
 
 // Protected routes
