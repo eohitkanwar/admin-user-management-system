@@ -27,19 +27,46 @@ export const registerUser = async (req, res) => {
       });
     }
 
-
     // 🔐 Assign role (DEV logic)
     const role = email === "admin@yopmail.com" ? "admin" : "user";
 
     console.log("role", role);
 
     // Create user
-    const user = await User.create({
-      username,
-      email,
-      password,
-      role,
-    });
+    let user;
+    try {
+      user = await User.create({
+        username,
+        email,
+        password,
+        role,
+      });
+    } catch (createError) {
+      console.error("User creation error:", createError);
+      
+      // Handle Mongoose validation errors
+      if (createError.name === 'ValidationError') {
+        const errors = Object.values(createError.errors).map(err => err.message);
+        return res.status(400).json({
+          success: false,
+          message: errors[0] || "Validation failed",
+          errors: errors
+        });
+      }
+      
+      // Handle duplicate key errors
+      if (createError.code === 11000) {
+        const field = Object.keys(createError.keyValue)[0];
+        return res.status(400).json({
+          success: false,
+          message: `${field} already exists`,
+          error: "DUPLICATE_FIELD"
+        });
+      }
+      
+      // Re-throw other errors to be caught by outer catch
+      throw createError;
+    }
 
     // Create JWT token
     const payload = {
@@ -59,19 +86,7 @@ export const registerUser = async (req, res) => {
     console.log("🔔 EMAIL SENDING: sendEmail function available:", typeof sendEmail);
     console.log("🔧 EMAIL CONFIG: EMAIL_USERNAME:", process.env.EMAIL_USERNAME);
     console.log("🔧 EMAIL CONFIG: EMAIL_PASSWORD exists:", !!process.env.EMAIL_PASSWORD);
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-      message: "User registered successfully",
-      emailSent: emailResult?.success || false // Show actual email status
-    });
-    console.log("user created",user)
+    
     let emailResult;
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
@@ -123,9 +138,42 @@ export const registerUser = async (req, res) => {
     }
 
     // Response
-    
+    res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      message: "User registered successfully",
+      emailSent: emailResult?.success || false // Show actual email status
+    });
+    console.log("user created",user)
   } catch (error) {
     console.error("Registration error:", error);
+    
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: errors[0] || "Validation failed",
+        errors: errors
+      });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        success: false,
+        message: `${field} already exists`,
+        error: "DUPLICATE_FIELD"
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "Server error during registration",
