@@ -59,7 +59,19 @@ export const registerUser = async (req, res) => {
     console.log("🔔 EMAIL SENDING: sendEmail function available:", typeof sendEmail);
     console.log("🔧 EMAIL CONFIG: EMAIL_USERNAME:", process.env.EMAIL_USERNAME);
     console.log("🔧 EMAIL CONFIG: EMAIL_PASSWORD exists:", !!process.env.EMAIL_PASSWORD);
-    
+    res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      message: "User registered successfully",
+      emailSent: emailResult?.success || false // Show actual email status
+    });
+    console.log("user created",user)
     let emailResult;
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
@@ -111,19 +123,7 @@ export const registerUser = async (req, res) => {
     }
 
     // Response
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-      message: "User registered successfully",
-      emailSent: emailResult?.success || false // Show actual email status
-    });
-    console.log("user created",user)
+    
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
@@ -257,7 +257,7 @@ export const forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+    const resetUrl = `https://admin-user-management-system-frontend.onrender.com/reset-password/${resetToken}`;
 
     console.log("reseturl", resetUrl);
 
