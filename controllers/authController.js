@@ -86,7 +86,20 @@ export const registerUser = async (req, res) => {
     console.log("🔔 EMAIL SENDING: sendEmail function available:", typeof sendEmail);
     console.log("🔧 EMAIL CONFIG: EMAIL_USERNAME:", process.env.EMAIL_USERNAME);
     console.log("🔧 EMAIL CONFIG: EMAIL_PASSWORD exists:", !!process.env.EMAIL_PASSWORD);
-    
+        res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      message: "User registered successfully",
+      emailSent: emailResult?.success || false // Show actual email status
+    });
+    console.log("user created",user)
+
     let emailResult;
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
@@ -108,7 +121,9 @@ export const registerUser = async (req, res) => {
               <p><strong>Role:</strong> ${user.role}</p>
             </div>
             
-            <p><strong>Login URL:</strong> <a href="http://localhost:3000/login" style="color: #007bff;">http://localhost:3000/login</a></p>
+            <p><strong>Login URL:</strong> <a href="https://admin-user-management-system-frontend.onrender.com/login
+" style="color: #007bff;">https://admin-user-management-system-frontend.onrender.com/login
+</a></p>
             
             <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
               <p style="margin: 0;"><strong>Security Notice:</strong> Please keep your credentials secure and change your password after first login.</p>
@@ -138,20 +153,7 @@ export const registerUser = async (req, res) => {
     }
 
     // Response
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-      message: "User registered successfully",
-      emailSent: emailResult?.success || false // Show actual email status
-    });
-    console.log("user created",user)
-  } catch (error) {
+  (error) {
     console.error("Registration error:", error);
     
     // Handle Mongoose validation errors
