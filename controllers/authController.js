@@ -95,11 +95,14 @@ export const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
       },
+        console.log("user created",user)
       message: "User registered successfully",
       emailSent: emailResult?.success || false // Show actual email status
+        (error) {
+    console.error("Registration errr:", error);
+        }
     });
-    console.log("user created",user)
-  }
+  
     let emailResult;
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
@@ -150,11 +153,10 @@ export const registerUser = async (req, res) => {
       console.log("📧 EMAIL ERROR TYPE:", emailError.code);
       console.log("📧 EMAIL ERROR STACK:", emailError.stack);
       emailResult = { success: false, message: 'Email failed but user creation continued' };
+
     }
 
     // Response
-  (error) {
-    console.error("Registration error:", error);
     
     // Handle Mongoose validation errors
     if (error.name === 'ValidationError') {
@@ -182,7 +184,7 @@ export const registerUser = async (req, res) => {
     });
   }
 };
-
+}
 // @route   POST /api/auth/login
 // @access  Public
 // @desc    Login user
