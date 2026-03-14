@@ -99,7 +99,7 @@ export const registerUser = async (req, res) => {
       emailSent: emailResult?.success || false // Show actual email status
     });
     console.log("user created",user)
-
+  }
     let emailResult;
     try {
       console.log("🔔 EMAIL SENDING: About to call sendEmail...");
