@@ -122,6 +122,17 @@ export const registerUser = async (req, res) => {
     // Response
     
     // Handle Mongoose validation errors
+    
+    // Handle duplicate key errors
+    
+    res.status(500).json({
+      success: false,
+      message: "Server error during registration",
+    });
+  }
+catch (error) {
+
+    console.error("Registration error:", error);
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
@@ -131,7 +142,6 @@ export const registerUser = async (req, res) => {
       });
     }
     
-    // Handle duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({
@@ -140,14 +150,9 @@ export const registerUser = async (req, res) => {
         error: "DUPLICATE_FIELD"
       });
     }
-    
-    res.status(500).json({
-      success: false,
-      message: "Server error during registration",
-    });
-  }
-};
 
+}
+}
 // @route   POST /api/auth/login
 // @access  Public
 // @desc    Login user
