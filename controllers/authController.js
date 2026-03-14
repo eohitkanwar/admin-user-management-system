@@ -95,7 +95,6 @@ export const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-        console.log("user created",user)
       message: "User registered successfully",
       emailSent: emailResult?.success || false // Show actual email status
         (error) {
