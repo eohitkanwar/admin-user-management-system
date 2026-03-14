@@ -184,7 +184,7 @@ export const registerUser = async (req, res) => {
     });
   }
 };
-}
+
 // @route   POST /api/auth/login
 // @access  Public
 // @desc    Login user
