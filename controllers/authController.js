@@ -16,59 +16,28 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Check if user already exists
+    // Check existing user
     const existingUser = await User.findOne({ email });
-    console.log("existinguser",existingUser)
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        error : "User already exists with email" ,
         message: "User already exists with this email",
       });
     }
 
-    // 🔐 Assign role (DEV logic)
+    // Assign role
     const role = email === "admin@yopmail.com" ? "admin" : "user";
 
-    console.log("role", role);
-
     // Create user
-    let user;
-    try {
-      user = await User.create({
-        username,
-        email,
-        password,
-        role,
-      });
-    } catch (createError) {
-      console.error("User creation error:", createError);
-      
-      // Handle Mongoose validation errors
-      if (createError.name === 'ValidationError') {
-        const errors = Object.values(createError.errors).map(err => err.message);
-        return res.status(400).json({
-          success: false,
-          message: errors[0] || "Validation failed",
-          errors: errors
-        });
-      }
-      
-      // Handle duplicate key errors
-      if (createError.code === 11000) {
-        const field = Object.keys(createError.keyValue)[0];
-        return res.status(400).json({
-          success: false,
-          message: `${field} already exists`,
-          error: "DUPLICATE_FIELD"
-        });
-      }
-      
-      // Re-throw other errors to be caught by outer catch
-      throw createError;
-    }
+    const user = await User.create({
+      username,
+      email,
+      password,
+      role,
+    });
 
-    // Create JWT token
+    // Create JWT
     const payload = {
       user: {
         id: user._id,
@@ -76,17 +45,14 @@ export const registerUser = async (req, res) => {
       },
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key", {
-      expiresIn: "7d",
-    });
-    console.log("=----==",token)
+    const token = jwt.sign(
+      payload,
+      process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key",
+      { expiresIn: "7d" }
+    );
 
-    // Send welcome email with credentials
-    console.log("🔔 EMAIL SENDING: Starting email sending process for:", user.email);
-    console.log("🔔 EMAIL SENDING: sendEmail function available:", typeof sendEmail);
-    console.log("🔧 EMAIL CONFIG: EMAIL_USERNAME:", process.env.EMAIL_USERNAME);
-    console.log("🔧 EMAIL CONFIG: EMAIL_PASSWORD exists:", !!process.env.EMAIL_PASSWORD);
-        res.status(201).json({
+    // 🔹 Send response FIRST (important)
+    res.status(201).json({
       success: true,
       token,
       user: {
@@ -96,11 +62,9 @@ export const registerUser = async (req, res) => {
         role: user.role,
       },
       message: "User registered successfully",
-      emailSent: emailResult?.success || false // Show actual email status
-        (error) {
-    console.error("Registration errr:", error);
-        }
     });
+
+    // 🔹 Send email in background (no timeout issue)
   
     let emailResult;
     try {
