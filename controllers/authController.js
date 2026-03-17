@@ -29,12 +29,24 @@ export const registerUser = async (req, res) => {
     // Assign role
     const role = email === "admin@yopmail.com" ? "admin" : "user";
 
+    // Check if this is an admin creating a user and capture admin info
+    let adminInfo = {};
+    if (req.user && req.user.role === 'admin') {
+      adminInfo = {
+        createdBy: req.user.id,
+        createdByName: req.user.username,
+        createdByEmail: req.user.email,
+        createdByRole: req.user.role,
+      };
+    }
+
     // Create user
     const user = await User.create({
       username,
       email,
       password,
       role,
+      ...adminInfo,
     });
 
     // Create JWT
@@ -726,6 +738,95 @@ export const changePassword = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// @desc    Get user creation history
+// @route   GET /api/auth/user-history
+// @access  Private (Admin only)
+export const getUserHistory = async (req, res) => {
+  try {
+    // Add cache control headers to prevent caching
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Check if pagination parameters are provided
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const usePagination = req.query.page || req.query.limit;
+    const search = req.query.search || "";
+
+    console.log("🔍 getUserHistory called with:", { page, limit, usePagination, search });
+
+    // Build search query
+    let searchQuery = { createdBy: { $exists: true, $ne: null } };
+    if (search && search.trim()) {
+      searchQuery.$and = [
+        { createdBy: { $exists: true, $ne: null } },
+        {
+          $or: [
+            { username: { $regex: search.trim(), $options: 'i' } },
+            { email: { $regex: search.trim(), $options: 'i' } },
+            { role: { $regex: search.trim(), $options: 'i' } },
+            { createdByName: { $regex: search.trim(), $options: 'i' } },
+            { createdByEmail: { $regex: search.trim(), $options: 'i' } }
+          ]
+        }
+      ];
+    }
+
+    if (usePagination) {
+      // Pagination logic
+      const skip = (page - 1) * limit;
+      
+      const totalUsers = await User.countDocuments(searchQuery);
+      
+      const users = await User.find(searchQuery)
+        .select("-password")
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
+
+      const totalPages = Math.ceil(totalUsers / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      console.log("✅ User history fetched successfully:", users.length, "users");
+
+      return res.status(200).json({
+        success: true,
+        count: users.length,
+        totalUsers,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        users,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      // Original format for backward compatibility
+      const users = await User.find(searchQuery)
+        .select("-password")
+        .sort({ createdAt: -1 });
+
+      console.log("✅ User history fetched successfully (no pagination):", users.length, "users");
+
+      res.status(200).json({
+        success: true,
+        count: users.length,
+        users,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    console.error("❌ Get user history error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
   }
 };
 
