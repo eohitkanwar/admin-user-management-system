@@ -54,23 +54,7 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: false,
-  },
-  createdByName: {
-    type: String,
-    required: false,
-  },
-  createdByEmail: {
-    type: String,
-    required: false,
-  },
-  createdByRole: {
-    type: String,
-    required: false,
-  },
+  
 });
 
 // Hash password before saving

@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import mongoose from "mongoose";
 import sendEmail from "./email.js";
+import Activity from "../models/Activity.js";
+
 
 export const registerUser = async (req, res) => {
   try {
@@ -827,6 +829,19 @@ export const getUserHistory = async (req, res) => {
       message: "Server error",
       error: error.message
     });
+  }
+};
+
+export const createActivity = async ({ action, description, performedBy, targetUser }) => {
+  try {
+    await Activity.create({
+      action,
+      description,
+      performedBy,
+      targetUser
+    });
+  } catch (error) {
+    console.log("Activity log error:", error);
   }
 };
 
