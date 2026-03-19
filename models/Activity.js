@@ -20,7 +20,7 @@ const activitySchema = new mongoose.Schema(
     },
 
     // Kis user pe action hua
-    createdUser: {
+    targetUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
@@ -30,5 +30,5 @@ const activitySchema = new mongoose.Schema(
 );
 
 const Activity = mongoose.model("Activity", activitySchema);
-
+ 
 export default Activity;
