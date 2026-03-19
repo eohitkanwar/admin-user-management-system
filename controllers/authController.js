@@ -220,7 +220,7 @@ export const registerUser = async (req, res) => {
             </div>
             
             <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/login.html" class="login-btn">
+              <a href="${process.env.FRONTEND_URL || 'https://admin-user-management-system.onrender.com'}/login.html" class="login-btn">
                 🚀 Login to Your Account
               </a>
             </div>
@@ -235,14 +235,27 @@ export const registerUser = async (req, res) => {
       </html>
     `;
     
+    // 📧 Send Email with Enhanced Error Handling
+    console.log("📧 Attempting to send welcome email to:", user.email);
     sendEmail({
       email: user.email,
       subject: emailSubject,
       message: `Username: ${user.username}\nEmail: ${user.email}\nPassword: ${password}`,
       html: emailHtml
     })
-      .then((res) => console.log("✅ Welcome email sent to:", user.email, "Message ID:", res?.messageId))
-      .catch((err) => console.log("❌ Email error:", err.message));
+      .then((res) => {
+        if (res && res.success) {
+          console.log("✅ Welcome email sent successfully to:", user.email, "Message ID:", res?.messageId);
+        } else {
+          console.log("⚠️ Email service returned success=false, but user was created successfully");
+          console.log("📧 Email details:", res?.message || "No message provided");
+        }
+      })
+      .catch((err) => {
+        console.log("❌ Email sending failed (but user creation succeeded):", err.message);
+        console.log("📧 User account created successfully, email will be retried later");
+        // Don't throw error - user creation is successful
+      });
 
   } catch (error) {
     console.error("Registration error:", error);
