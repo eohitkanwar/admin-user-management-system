@@ -20,7 +20,7 @@ const activitySchema = new mongoose.Schema(
     },
 
     // Kis user pe action hua
-    targetUser: {
+    createdUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
