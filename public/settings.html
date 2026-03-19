@@ -211,6 +211,72 @@
             margin-bottom: 20px;
             border: 1px solid #c3e6cb;
         }
+
+        .action-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: 2px solid #e1e5e9;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .action-btn:hover {
+            border-color: #4facfe;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.active {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-color: #4facfe;
+        }
+
+        .action-btn .count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .action-btn.active .count {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .action-created { border-color: #28a745; }
+        .action-created:hover { border-color: #28a745; }
+        .action-created.active { background: #28a745; border-color: #28a745; }
+
+        .action-updated { border-color: #ffc107; }
+        .action-updated:hover { border-color: #ffc107; }
+        .action-updated.active { background: #ffc107; border-color: #ffc107; }
+
+        .action-deleted { border-color: #dc3545; }
+        .action-deleted:hover { border-color: #dc3545; }
+        .action-deleted.active { background: #dc3545; border-color: #dc3545; }
+
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .action-created-badge { background: #28a745; }
+        .action-updated-badge { background: #ffc107; }
+        .action-deleted-badge { background: #dc3545; }
     </style>
 </head>
 <body>
@@ -222,9 +288,24 @@
 
         <div class="settings-content">
             <div class="section">
-                <h2>User Creation History</h2>
+                <h2>User Activity History</h2>
                 
                 <div id="message"></div>
+
+                <div class="action-filters">
+                    <button class="action-btn" id="allActions" onclick="filterByAction('')">
+                        All Actions <span class="count" id="allCount">0</span>
+                    </button>
+                    <button class="action-btn action-created" id="createdActions" onclick="filterByAction('USER_CREATED')">
+                        👤 Created Users <span class="count" id="createdCount">0</span>
+                    </button>
+                    <button class="action-btn action-updated" id="updatedActions" onclick="filterByAction('USER_UPDATED')">
+                        ✏️ Updated Users <span class="count" id="updatedCount">0</span>
+                    </button>
+                    <button class="action-btn action-deleted" id="deletedActions" onclick="filterByAction('USER_DELETED')">
+                        🗑️ Deleted Users <span class="count" id="deletedCount">0</span>
+                    </button>
+                </div>
 
                 <div class="search-bar">
                     <input type="text" id="searchInput" placeholder="Search by username, email, admin name, or admin email...">
@@ -240,13 +321,14 @@
                     <table class="history-table" id="historyTable">
                         <thead>
                             <tr>
-                                <th>User Name</th>
+                                <th>Action</th>
+                                <th>Target User</th>
                                 <th>User Email</th>
                                 <th>User Role</th>
-                                <th>Created By</th>
+                                <th>Performed By</th>
                                 <th>Admin Email</th>
                                 <th>Admin Role</th>
-                                <th>Created Date</th>
+                                <th>Date & Time</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
@@ -267,6 +349,7 @@
     <script>
         let currentPage = 1;
         let currentSearch = '';
+        let currentAction = '';
         const limit = 10;
 
         // Check if user is authenticated
@@ -289,7 +372,7 @@
         }
 
         // Load user history
-        async function loadUserHistory(page = 1, search = '') {
+        async function loadUserHistory(page = 1, search = '', action = '') {
             if (!checkAuth()) return;
 
             const loading = document.getElementById('loading');
@@ -311,6 +394,10 @@
                 if (search) {
                     queryParams.append('search', search);
                 }
+                
+                if (action) {
+                    queryParams.append('action', action);
+                }
 
                 const response = await fetch(`/api/auth/user-history?${queryParams}`, {
                     headers: getAuthHeaders()
@@ -322,11 +409,13 @@
 
                 const data = await response.json();
 
-                if (data.success && data.users.length > 0) {
-                    displayUsers(data.users);
+                if (data.success && data.activities.length > 0) {
+                    displayActivities(data.activities);
                     displayPagination(data);
+                    updateActionCounts(data.actionCounts);
                 } else {
                     noData.style.display = 'block';
+                    updateActionCounts({ USER_CREATED: 0, USER_UPDATED: 0, USER_DELETED: 0 });
                 }
             } catch (error) {
                 console.error('Error loading user history:', error);
@@ -337,34 +426,81 @@
             }
         }
 
-        // Display users in table
-        function displayUsers(users) {
+        // Display activities in table
+        function displayActivities(activities) {
             const tableBody = document.getElementById('historyTableBody');
             tableBody.innerHTML = '';
 
-            users.forEach(user => {
+            activities.forEach(activity => {
                 const row = document.createElement('tr');
                 
-                const createdDate = new Date(user.createdAt).toLocaleString();
-                const adminRoleBadge = user.createdByRole === 'admin' ? 
+                const createdDate = new Date(activity.timestamp).toLocaleString();
+                const adminRoleBadge = activity.performedBy.role === 'admin' ? 
                     '<span class="admin-badge">Admin</span>' : 
                     '<span class="user-badge">User</span>';
-                const userRoleBadge = user.role === 'admin' ? 
+                const userRoleBadge = activity.targetUser.role === 'admin' ? 
                     '<span class="admin-badge">Admin</span>' : 
                     '<span class="user-badge">User</span>';
 
+                const actionBadge = getActionBadge(activity.action);
+
                 row.innerHTML = `
-                    <td>${user.username}</td>
-                    <td>${user.email}</td>
+                    <td>${actionBadge}</td>
+                    <td>${activity.targetUser.name}</td>
+                    <td>${activity.targetUser.email}</td>
                     <td>${userRoleBadge}</td>
-                    <td>${user.createdByName || 'N/A'}</td>
-                    <td>${user.createdByEmail || 'N/A'}</td>
+                    <td>${activity.performedBy.name}</td>
+                    <td>${activity.performedBy.email}</td>
                     <td>${adminRoleBadge}</td>
                     <td class="date">${createdDate}</td>
                 `;
                 
                 tableBody.appendChild(row);
             });
+        }
+
+        // Get action badge HTML
+        function getActionBadge(action) {
+            switch(action) {
+                case 'USER_CREATED':
+                    return '<span class="action-badge action-created-badge">👤 Created</span>';
+                case 'USER_UPDATED':
+                    return '<span class="action-badge action-updated-badge">✏️ Updated</span>';
+                case 'USER_DELETED':
+                    return '<span class="action-badge action-deleted-badge">🗑️ Deleted</span>';
+                default:
+                    return '<span class="action-badge">Unknown</span>';
+            }
+        }
+
+        // Update action counts
+        function updateActionCounts(actionCounts) {
+            document.getElementById('allCount').textContent = 
+                actionCounts.USER_CREATED + actionCounts.USER_UPDATED + actionCounts.USER_DELETED;
+            document.getElementById('createdCount').textContent = actionCounts.USER_CREATED;
+            document.getElementById('updatedCount').textContent = actionCounts.USER_UPDATED;
+            document.getElementById('deletedCount').textContent = actionCounts.USER_DELETED;
+        }
+
+        // Filter by action type
+        function filterByAction(action) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.action-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            if (action === '') {
+                document.getElementById('allActions').classList.add('active');
+            } else if (action === 'USER_CREATED') {
+                document.getElementById('createdActions').classList.add('active');
+            } else if (action === 'USER_UPDATED') {
+                document.getElementById('updatedActions').classList.add('active');
+            } else if (action === 'USER_DELETED') {
+                document.getElementById('deletedActions').classList.add('active');
+            }
+            
+            currentAction = action;
+            currentPage = 1;
+            loadUserHistory(currentPage, currentSearch, action);
         }
 
         // Display pagination
@@ -379,7 +515,7 @@
             prevBtn.onclick = () => {
                 if (data.hasPrevPage) {
                     currentPage--;
-                    loadUserHistory(currentPage, currentSearch);
+                    loadUserHistory(currentPage, currentSearch, currentAction);
                 }
             };
             pagination.appendChild(prevBtn);
@@ -391,7 +527,7 @@
                 pageBtn.className = i === data.currentPage ? 'active' : '';
                 pageBtn.onclick = () => {
                     currentPage = i;
-                    loadUserHistory(currentPage, currentSearch);
+                    loadUserHistory(currentPage, currentSearch, currentAction);
                 };
                 pagination.appendChild(pageBtn);
             }
@@ -403,7 +539,7 @@
             nextBtn.onclick = () => {
                 if (data.hasNextPage) {
                     currentPage++;
-                    loadUserHistory(currentPage, currentSearch);
+                    loadUserHistory(currentPage, currentSearch, currentAction);
                 }
             };
             pagination.appendChild(nextBtn);
@@ -416,7 +552,7 @@
             const searchInput = document.getElementById('searchInput');
             currentSearch = searchInput.value.trim();
             currentPage = 1;
-            loadUserHistory(currentPage, currentSearch);
+            loadUserHistory(currentPage, currentSearch, currentAction);
         }
 
         // Clear search
@@ -425,7 +561,7 @@
             searchInput.value = '';
             currentSearch = '';
             currentPage = 1;
-            loadUserHistory(currentPage, currentSearch);
+            loadUserHistory(currentPage, currentSearch, currentAction);
         }
 
         // Show message
@@ -449,6 +585,8 @@
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Set default active button
+            document.getElementById('allActions').classList.add('active');
             loadUserHistory();
         });
     </script>

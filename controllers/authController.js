@@ -566,6 +566,32 @@ export const updateUser = async (req, res) => {
       });
     }
     
+    // Create activity log for user update
+    try {
+      const changes = [];
+      if (req.body.username && req.body.username !== user.username) {
+        changes.push(`username to ${req.body.username}`);
+      }
+      if (req.body.email && req.body.email !== user.email) {
+        changes.push(`email to ${req.body.email}`);
+      }
+      if (req.body.role && req.body.role !== user.role) {
+        changes.push(`role to ${req.body.role}`);
+      }
+      
+      const changeDescription = changes.length > 0 ? changes.join(', ') : 'profile information';
+      
+      await Activity.create({
+        action: "USER_UPDATED",
+        description: `Admin ${req.user.username} updated ${user.username}'s ${changeDescription}`,
+        performedBy: req.user.id,
+        targetUser: user._id,
+      });
+      console.log("✅ Activity log created for user update");
+    } catch (err) {
+      console.log("❌ Activity log failed for user update:", err.message);
+    }
+    
     console.log("user", user);
     res.status(200).json({
       success: true,
@@ -625,6 +651,20 @@ export const deleteUser = async (req, res) => {
 
     console.log("✅ DELETE USER - User found:", user.username, user.email);
     console.log("🗑️ DELETE USER - Deleting user...");
+    
+    // Create activity log before deletion
+    try {
+      await Activity.create({
+        action: "USER_DELETED",
+        description: `Admin ${req.user.username} deleted user ${user.username}`,
+        performedBy: req.user.id,
+        targetUser: user._id,
+      });
+      console.log("✅ Activity log created for user deletion");
+    } catch (err) {
+      console.log("❌ Activity log failed for user deletion:", err.message);
+    }
+    
     await User.findByIdAndDelete(userId);
 
     console.log("✅ DELETE USER - User deleted successfully");
@@ -705,17 +745,22 @@ export const changePassword = async (req, res) => {
 // @access  Private (Admin only)
 export const getUserActivities = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const { page = 1, limit = 10, search = "", action = "" } = req.query;
 
-    // Build search query if search is provided
+    // Build search query
     let query = {};
+    
+    // Add action filter if specified
+    if (action && action.trim()) {
+      query.action = action.trim();
+    }
+    
+    // Add search filter if search is provided
     if (search && search.trim()) {
-      query = {
-        $or: [
-          { action: { $regex: search.trim(), $options: 'i' } },
-          { description: { $regex: search.trim(), $options: 'i' } }
-        ]
-      };
+      query.$or = [
+        { action: { $regex: search.trim(), $options: 'i' } },
+        { description: { $regex: search.trim(), $options: 'i' } }
+      ];
     }
 
     const activities = await Activity.find(query)
@@ -747,12 +792,24 @@ export const getUserActivities = async (req, res) => {
       }
     }));
 
+    // Get counts for each action type
+    const [createdCount, updatedCount, deletedCount] = await Promise.all([
+      Activity.countDocuments({ action: "USER_CREATED" }),
+      Activity.countDocuments({ action: "USER_UPDATED" }),
+      Activity.countDocuments({ action: "USER_DELETED" })
+    ]);
+
     res.json({
       success: true,
       activities: formatted,
       totalPages: Math.ceil(total / limit),
       currentPage: parseInt(page),
-      totalActivities: total
+      totalActivities: total,
+      actionCounts: {
+        USER_CREATED: createdCount,
+        USER_UPDATED: updatedCount,
+        USER_DELETED: deletedCount
+      }
     });
 
   } catch (error) {
