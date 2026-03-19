@@ -709,7 +709,7 @@ export const getUserActivities = async (req, res) => {
 
     const activities = await Activity.find()
       .populate("performedBy", "username email role")
-      .populate("targetUser", "username email role")
+      .populate("createdUser", "username email role")
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
