@@ -89,13 +89,160 @@ export const registerUser = async (req, res) => {
     });
 
     // ✅ 9. Send Email in Background (NON-BLOCKING 🚀)
+    const emailSubject = process.env.ADMIN_EMAIL_SUBJECT || "Welcome! Your Account Has Been Created";
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to Admin Panel</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+          }
+          .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4facfe;
+          }
+          .header h1 {
+            color: #4facfe;
+            margin: 0;
+            font-size: 28px;
+          }
+          .content {
+            margin-bottom: 30px;
+          }
+          .credentials {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+            margin: 20px 0;
+          }
+          .credentials h3 {
+            color: #333;
+            margin-top: 0;
+          }
+          .credential-item {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+          }
+          .credential-label {
+            font-weight: bold;
+            min-width: 100px;
+            color: #666;
+          }
+          .credential-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+            flex: 1;
+          }
+          .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+          }
+          .login-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.3s;
+          }
+          .login-btn:hover {
+            transform: translateY(-2px);
+          }
+          .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Welcome to Admin Panel</h1>
+            <p>Your account has been successfully created!</p>
+          </div>
+          
+          <div class="content">
+            <p>Hello <strong>${user.username}</strong>,</p>
+            <p>An administrator has created an account for you in our Admin Panel system. You can now access the system using the credentials below:</p>
+            
+            <div class="credentials">
+              <h3>🔐 Your Login Credentials</h3>
+              <div class="credential-item">
+                <span class="credential-label">Username:</span>
+                <span class="credential-value">${user.username}</span>
+              </div>
+              <div class="credential-item">
+                <span class="credential-label">Email:</span>
+                <span class="credential-value">${user.email}</span>
+              </div>
+              <div class="credential-item">
+                <span class="credential-label">Password:</span>
+                <span class="credential-value">${password}</span>
+              </div>
+            </div>
+            
+            <div class="warning">
+              <strong>⚠️ Security Notice:</strong> For your security, please change your password after your first login.
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/login.html" class="login-btn">
+                🚀 Login to Your Account
+              </a>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>If you have any questions or didn't request this account, please contact the system administrator.</p>
+            <p>© 2026 Admin Panel. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
     sendEmail({
       email: user.email,
-      subject: "Welcome! Your Account Has Been Created",
+      subject: emailSubject,
       message: `Username: ${user.username}\nEmail: ${user.email}\nPassword: ${password}`,
+      html: emailHtml
     })
-      .then((res) => console.log("Email sent:", res?.messageId))
-      .catch((err) => console.log("Email error:", err.message));
+      .then((res) => console.log("✅ Welcome email sent to:", user.email, "Message ID:", res?.messageId))
+      .catch((err) => console.log("❌ Email error:", err.message));
 
   } catch (error) {
     console.error("Registration error:", error);
