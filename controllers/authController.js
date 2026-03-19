@@ -707,14 +707,25 @@ export const getUserActivities = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
 
-    const activities = await Activity.find()
+    // Build search query if search is provided
+    let query = {};
+    if (search && search.trim()) {
+      query = {
+        $or: [
+          { action: { $regex: search.trim(), $options: 'i' } },
+          { description: { $regex: search.trim(), $options: 'i' } }
+        ]
+      };
+    }
+
+    const activities = await Activity.find(query)
       .populate("performedBy", "username email role")
-      .populate("createdUser", "username email role")
+      .populate("targetUser", "username email role")
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const total = await Activity.countDocuments();
+    const total = await Activity.countDocuments(query);
 
     // 👇 Clean response (VERY IMPORTANT)
     const formatted = activities.map((item) => ({
@@ -724,25 +735,32 @@ export const getUserActivities = async (req, res) => {
       timestamp: item.createdAt,
 
       performedBy: {
-        name: item.performedBy?.username,
-        email: item.performedBy?.email,
-        role: item.performedBy?.role
+        name: item.performedBy?.username || 'Unknown',
+        email: item.performedBy?.email || 'N/A',
+        role: item.performedBy?.role || 'N/A'
       },
 
       targetUser: {
-        name: item.targetUser?.username,
-        email: item.targetUser?.email,
-        role: item.targetUser?.role
+        name: item.targetUser?.username || 'Unknown',
+        email: item.targetUser?.email || 'N/A',
+        role: item.targetUser?.role || 'N/A'
       }
     }));
 
     res.json({
+      success: true,
       activities: formatted,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      totalActivities: total
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error in getUserActivities:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Server error while fetching activities" 
+    });
   }
 };
 export const createActivity = async ({ action, description, performedBy, targetUser }) => {
