@@ -10,7 +10,7 @@ export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Validate input
+    // ✅ 1. Validation
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -18,9 +18,8 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Check existing user
+    // ✅ 2. Check existing user
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -28,21 +27,18 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Assign role
+    // ✅ 3. Assign role
     const role = email === "admin@yopmail.com" ? "admin" : "user";
 
-    // Check if this is an admin creating a user and capture admin info
+    // ✅ 4. Admin info (for tracking)
     let adminInfo = {};
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && req.user.role === "admin") {
       adminInfo = {
         createdBy: req.user.id,
-        createdByName: req.user.username,
-        createdByEmail: req.user.email,
-        createdByRole: req.user.role,
       };
     }
 
-    // Create user
+    // ✅ 5. Create user
     const user = await User.create({
       username,
       email,
@@ -51,21 +47,31 @@ export const registerUser = async (req, res) => {
       ...adminInfo,
     });
 
-    // Create JWT
-    const payload = {
-      user: {
-        id: user._id,
-        role: user.role,
-      },
-    };
+    // ✅ 6. Create Activity Log (IMPORTANT 🔥)
+    try {
+      await Activity.create({
+        action: "USER_CREATED",
+        description: `User ${user.username} created`,
+        performedBy: req.user?.id,
+        targetUser: user._id,
+      });
+    } catch (err) {
+      console.log("Activity log failed:", err.message);
+    }
 
+    // ✅ 7. Create JWT
     const token = jwt.sign(
-      payload,
+      {
+        user: {
+          id: user._id,
+          role: user.role,
+        },
+      },
       process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key",
       { expiresIn: "7d" }
     );
 
-    // 🔹 Send response FIRST (important)
+    // ✅ 8. Send response FIRST
     res.status(201).json({
       success: true,
       token,
@@ -78,96 +84,43 @@ export const registerUser = async (req, res) => {
       message: "User registered successfully",
     });
 
-    // 🔹 Send email in background (no timeout issue)
-  
-    let emailResult;
-    try {
-      console.log("🔔 EMAIL SENDING: About to call sendEmail...");
-      emailResult = await sendEmail({
-        email: user.email,
-        subject: "Welcome! Your Account Has Been Created",
-        message: `Dear ${user.username},\n\nYour account has been successfully created. Here are your login credentials:\n\nUsername: ${user.username}\nEmail: ${user.email}\nPassword: ${password}\nRole: ${user.role}\n\nLogin URL: http://localhost:3000/login\n\nSecurity Notice: Please keep your credentials secure and change your password after first login.\n\nIf you have any questions or need assistance, please contact our support team.`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333; text-align: center;">Welcome to Our System!</h2>
-            <p>Dear <strong>${user.username}</strong>,</p>
-            <p>Your account has been successfully created. Here are your login credentials:</p>
-            
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #333; margin-top: 0;">Account Details:</h3>
-              <p><strong>Username:</strong> ${user.username}</p>
-              <p><strong>Email:</strong> ${user.email}</p>
-              <p><strong>Password:</strong> ${password}</p>
-              <p><strong>Role:</strong> ${user.role}</p>
-            </div>
-            
-            <p><strong>Login URL:</strong> <a href="https://admin-user-management-system-frontend.onrender.com/login
-" style="color: #007bff;">https://admin-user-management-system-frontend.onrender.com/login
-</a></p>
-            
-            <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-              <p style="margin: 0;"><strong>Security Notice:</strong> Please keep your credentials secure and change your password after first login.</p>
-            </div>
-            
-            <p>If you have any questions or need assistance, please contact our support team.</p>
-            
-            <hr style="border: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              This is an automated message. Please do not reply to this email.
-            </p>
-          </div>
-        `,
-      });
-      
-      console.log("✅ Welcome email sent successfully to:", user.email);
-      console.log("📧 EMAIL RESULT:", emailResult);
-      console.log("📧 EMAIL SUCCESS: MessageId:", emailResult?.messageId);
-      console.log("------------------", sendEmail);
-    } catch (emailError) {
-      console.error("❌ Failed to send welcome email:", emailError);
-      console.error("❌ Email error details:", emailError.message);
-      console.log("======error", emailError.message);
-      console.log("📧 EMAIL ERROR TYPE:", emailError.code);
-      console.log("📧 EMAIL ERROR STACK:", emailError.stack);
-      emailResult = { success: false, message: 'Email failed but user creation continued' };
+    // ✅ 9. Send Email in Background (NON-BLOCKING 🚀)
+    sendEmail({
+      email: user.email,
+      subject: "Welcome! Your Account Has Been Created",
+      message: `Username: ${user.username}\nEmail: ${user.email}\nPassword: ${password}`,
+    })
+      .then((res) => console.log("Email sent:", res?.messageId))
+      .catch((err) => console.log("Email error:", err.message));
 
-    }
-
-    // Response
-    
-    // Handle Mongoose validation errors
-    
-    // Handle duplicate key errors
-    
-    res.status(500).json({
-      success: false,
-      message: "Server error during registration",
-    });
-  }
-catch (error) {
-
+  } catch (error) {
     console.error("Registration error:", error);
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
+
+    // ✅ Validation Error
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
-        message: errors[0] || "Validation failed",
-        errors: errors
+        message: errors[0],
       });
     }
-    
+
+    // ✅ Duplicate Error
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({
         success: false,
         message: `${field} already exists`,
-        error: "DUPLICATE_FIELD"
       });
     }
 
-}
-}
-// @route   POST /api/auth/login
+    // ✅ Default Error
+    return res.status(500).json({
+      success: false,
+      message: "Server error during registration",
+    });
+  }
+};// @route   POST /api/auth/login
 // @access  Public
 // @desc    Login user
 // @route   POST /api/auth/login
@@ -746,92 +699,48 @@ export const changePassword = async (req, res) => {
 // @desc    Get user creation history
 // @route   GET /api/auth/user-history
 // @access  Private (Admin only)
-export const getUserHistory = async (req, res) => {
+export const getUserActivities = async (req, res) => {
   try {
-    // Add cache control headers to prevent caching
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    const { page = 1, limit = 10, search = "" } = req.query;
 
-    // Check if pagination parameters are provided
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const usePagination = req.query.page || req.query.limit;
-    const search = req.query.search || "";
+    const activities = await Activity.find()
+      .populate("performedBy", "username email role")
+      .populate("targetUser", "username email role")
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
 
-    console.log("🔍 getUserHistory called with:", { page, limit, usePagination, search });
+    const total = await Activity.countDocuments();
 
-    // Build search query
-    let searchQuery = { createdBy: { $exists: true, $ne: null } };
-    if (search && search.trim()) {
-      searchQuery.$and = [
-        { createdBy: { $exists: true, $ne: null } },
-        {
-          $or: [
-            { username: { $regex: search.trim(), $options: 'i' } },
-            { email: { $regex: search.trim(), $options: 'i' } },
-            { role: { $regex: search.trim(), $options: 'i' } },
-            { createdByName: { $regex: search.trim(), $options: 'i' } },
-            { createdByEmail: { $regex: search.trim(), $options: 'i' } }
-          ]
-        }
-      ];
-    }
+    // 👇 Clean response (VERY IMPORTANT)
+    const formatted = activities.map((item) => ({
+      _id: item._id,
+      action: item.action,
+      description: item.description,
+      timestamp: item.createdAt,
 
-    if (usePagination) {
-      // Pagination logic
-      const skip = (page - 1) * limit;
-      
-      const totalUsers = await User.countDocuments(searchQuery);
-      
-      const users = await User.find(searchQuery)
-        .select("-password")
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 });
+      performedBy: {
+        name: item.performedBy?.username,
+        email: item.performedBy?.email,
+        role: item.performedBy?.role
+      },
 
-      const totalPages = Math.ceil(totalUsers / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1;
+      targetUser: {
+        name: item.targetUser?.username,
+        email: item.targetUser?.email,
+        role: item.targetUser?.role
+      }
+    }));
 
-      console.log("✅ User history fetched successfully:", users.length, "users");
-
-      return res.status(200).json({
-        success: true,
-        count: users.length,
-        totalUsers,
-        currentPage: page,
-        totalPages,
-        hasNextPage,
-        hasPrevPage,
-        users,
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      // Original format for backward compatibility
-      const users = await User.find(searchQuery)
-        .select("-password")
-        .sort({ createdAt: -1 });
-
-      console.log("✅ User history fetched successfully (no pagination):", users.length, "users");
-
-      res.status(200).json({
-        success: true,
-        count: users.length,
-        users,
-        timestamp: new Date().toISOString(),
-      });
-    }
-  } catch (error) {
-    console.error("❌ Get user history error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
+    res.json({
+      activities: formatted,
+      totalPages: Math.ceil(total / limit)
     });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
-
 export const createActivity = async ({ action, description, performedBy, targetUser }) => {
   try {
     await Activity.create({
