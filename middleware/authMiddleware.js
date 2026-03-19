@@ -22,7 +22,7 @@ export const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "MyAPP_Rohit"
+      process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key"
     );
 
     console.log("DECODED TOKEN:", decoded);

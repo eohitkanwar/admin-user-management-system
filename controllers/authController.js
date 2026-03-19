@@ -48,15 +48,19 @@ export const registerUser = async (req, res) => {
     });
 
     // ✅ 6. Create Activity Log (IMPORTANT 🔥)
-    try {
-      await Activity.create({
-        action: "USER_CREATED",
-        description: `User ${user.username} created`,
-        performedBy: req.user?.id,
-        targetUser: user._id,
-      });
-    } catch (err) {
-      console.log("Activity log failed:", err.message);
+    // Only create activity if an admin is creating the user
+    if (req.user && req.user.role === "admin") {
+      try {
+        await Activity.create({
+          action: "USER_CREATED",
+          description: `Admin ${req.user.username} created user ${user.username}`,
+          performedBy: req.user.id,
+          targetUser: user._id,
+        });
+        console.log("✅ Activity log created for user creation by admin:", req.user.username);
+      } catch (err) {
+        console.log("❌ Activity log failed:", err.message);
+      }
     }
 
     // ✅ 7. Create JWT
@@ -179,7 +183,7 @@ export const loginUser = async (req, res) => {
       },
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || "MyAPP_Rohit", {
+    const token = jwt.sign(payload, process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key", {
       expiresIn: "7d",
     });
     console.log("token", token);
