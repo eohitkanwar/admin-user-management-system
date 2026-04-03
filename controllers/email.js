@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -7,39 +7,56 @@ const sendEmail = async (options) => {
   try {
     // Create reusable transporter object using SMTP transport
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USERNAME, // Your email
-        pass: process.env.EMAIL_PASSWORD // Your email password or app password
+        pass: process.env.EMAIL_PASSWORD, // Your email password or app password
       },
+      connectionTimeout: 30000, // 30 sec
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
-
-    console.log("📧 Email transporter created for:", process.env.EMAIL_USERNAME);
+    console.log(
+      "📧 Email transporter created for:",
+      process.env.EMAIL_USERNAME,
+    );
 
     // Send mail with defined transport object
     const mailOptions = {
       from: `"Admin System" <${process.env.EMAIL_USERNAME}>`,
-      to: options.email,       
+      to: options.email,
       subject: options.subject,
       text: options.message,
       html: options.html,
     };
-    
+        transporter.verify((error, success) => {
+  if (error) {
+    console.log("SMTP ERROR FULL:", error);
+  } else {
+    console.log("SMTP READY");
+  }
+});
+
+
     console.log("📧 Sending email to:", options.email);
     console.log("📧 Email subject:", options.subject);
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Message sent: %s', info.messageId);
-    console.log('✅ Email sent successfully to:', options.email);
+    console.log("✅ Message sent: %s", info.messageId);
+    console.log("✅ Email sent successfully to:", options.email);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('❌ Email sending failed:', error.message);
-    console.log('⚠️ Email failed but continuing with user creation...');
+    console.error("❌ Email sending failed:", error.message);
+    console.log("⚠️ Email failed but continuing with user creation...");
     // Don't throw error, just log it and continue
-    return { success: false, message: 'Email failed but user creation continued' };
+    return {
+      success: false,
+      message: "Email failed but user creation continued",
+    };
   }
+  
 };
 
 export default sendEmail;
