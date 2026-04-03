@@ -39,7 +39,7 @@ router.get('/me', protect, getMe);
 router.put('/change-password', protect, changePassword);
 
 // User history route
-router.get('/user-history', protect, adminOnly, getUserActivities );
+router.post('/user-history', protect, adminOnly, getUserActivities );
 
 // Test email endpoint
 router.post('/test-email', async (req, res) => {
