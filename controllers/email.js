@@ -1,56 +1,32 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import SibApiV3Sdk from 'sib-api-v3-sdk';
 
-dotenv.config();
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKey = client.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
-const sendEmail = async (options) => {
+const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+
+const sendEmail = async ({ email, subject, html }) => {
   try {
-    // Create reusable transporter object using SMTP transport
-    const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: true, // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USERNAME, // Your email
-        pass: process.env.EMAIL_PASSWORD, // Your email password or app password
-      },
-    });
-    console.log(
-      "📧 Email transporter created for:",
-      process.env.EMAIL_USERNAME,
-    );
-
-    // Send mail with defined transport object
-    const mailOptions = {
-      from: `"Admin System" <${process.env.EMAIL_USERNAME}>`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
-      html: options.html,
+    const sender = {
+      email: process.env.EMAIL_USERNAME,
+      name: "Admin Panel"
     };
-    transporter.verify((error, success) => {
-      if (error) {
-        console.log("SMTP ERROR FULL:", error);
-      } else {
-        console.log("SMTP READY");
-      }
+
+    const receivers = [{ email }];
+
+    await tranEmailApi.sendTransacEmail({
+      sender,
+      to: receivers,
+      subject,
+      htmlContent: html,
     });
 
-    console.log("📧 Sending email to:", options.email);
-    console.log("📧 Email subject:", options.subject);
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Message sent: %s", info.messageId);
-    console.log("✅ Email sent successfully to:", options.email);
-    return { success: true, messageId: info.messageId };
+    console.log("✅ Email sent successfully");
+    return { success: true };
   } catch (error) {
-    console.error("❌ Email sending failed:", error.message);
-    console.log("⚠️ Email failed but continuing with user creation...");
-    // Don't throw error, just log it and continue
-    return {
-      success: false,
-      message: "Email failed but user creation continued",
-    };
+    console.error("❌ Email error:", error);
+    return { success: false };
   }
 };
 
