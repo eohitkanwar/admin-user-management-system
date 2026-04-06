@@ -7,16 +7,13 @@ const sendEmail = async (options) => {
   try {
     // Create reusable transporter object using SMTP transport
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
+      host: "smtp-relay.brevo.com",
+      port: 587,
       secure: true, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USERNAME, // Your email
         pass: process.env.EMAIL_PASSWORD, // Your email password or app password
       },
-      connectionTimeout: 30000, // 30 sec
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
     });
     console.log(
       "📧 Email transporter created for:",
@@ -31,14 +28,13 @@ const sendEmail = async (options) => {
       text: options.message,
       html: options.html,
     };
-        transporter.verify((error, success) => {
-  if (error) {
-    console.log("SMTP ERROR FULL:", error);
-  } else {
-    console.log("SMTP READY");
-  }
-});
-
+    transporter.verify((error, success) => {
+      if (error) {
+        console.log("SMTP ERROR FULL:", error);
+      } else {
+        console.log("SMTP READY");
+      }
+    });
 
     console.log("📧 Sending email to:", options.email);
     console.log("📧 Email subject:", options.subject);
@@ -56,7 +52,6 @@ const sendEmail = async (options) => {
       message: "Email failed but user creation continued",
     };
   }
-  
 };
 
 export default sendEmail;
