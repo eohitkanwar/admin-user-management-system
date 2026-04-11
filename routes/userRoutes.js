@@ -39,7 +39,7 @@ router.get('/me', protect, getMe);
 router.put('/change-password', protect, changePassword);
 
 // User history route
-router.getsss('/user-history', protect, adminOnly, getUserActivities );
+router.get('/user-history', protect, adminOnly, getUserActivities );
 
 // GET test endpoint for browser access
 app.get("/test-brevo", async (req, res) => {
