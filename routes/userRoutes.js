@@ -42,7 +42,7 @@ router.put('/change-password', protect, changePassword);
 router.get('/user-history', protect, adminOnly, getUserActivities );
 
 // GET test endpoint for browser access
-app.get("/test-brevo", async (req, res) => {
+router.get("/test-brevo", async (req, res) => {
   console.log("KEY:", process.env.BREVO_API_KEY);
   res.send("Check console");
 });
