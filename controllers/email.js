@@ -14,6 +14,7 @@ const sendEmail = async ({ email, subject, html }) => {
     };
 
     const receivers = [{ email }];
+    console.log("BREVO_API_KEY:", process.env.BREVO_API_KEY);
 
     await tranEmailApi.sendTransacEmail({
       sender,
