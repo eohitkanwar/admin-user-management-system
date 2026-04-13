@@ -423,7 +423,7 @@ export const forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `https://admin-user-management-system-frontend.onrender.com/reset-password/${resetToken}`;
+    const resetUrl = `https://admin-user-management-system-frontend.onrender.com/api/auth/reset-password/${resetToken}`;
 
     console.log("reseturl", resetUrl);
 
