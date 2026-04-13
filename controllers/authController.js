@@ -398,11 +398,15 @@ export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    console.log("reqbody", req.body);
+    console.log("Forgot password request for email:", email);
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "No user found with this email" });
+      console.log("User not found for email:", email);
+      return res.status(404).json({ 
+        success: false,
+        message: "No account found with this email address" 
+      });
     }
 
     // Generate reset token
@@ -438,7 +442,11 @@ export const forgotPassword = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        data: "Email sent",
+        message: "Password reset instructions sent to your email",
+        data: {
+          email: user.email,
+          resetUrl: resetUrl
+        }
       });
     } catch (err) {
       console.log("email error", err);
