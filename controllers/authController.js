@@ -201,7 +201,7 @@ export const registerUser = async (req, res) => {
           
           <div class="content">
             <p>Hello <strong>${user.username}</strong>,</p>
-            <p>An administrator has created an account for you in our Admin Panel system. You can now access the system using the credentials below:</p>
+            <p>An administrator has created an account for you. You can now access the system using the credentials below:</p>
             
             <div class="credentials">
               <h3>🔐 Your Login Credentials</h3>
