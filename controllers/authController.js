@@ -191,8 +191,8 @@ export const registerUser = async (req, res) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎉 Welcome to Admin Panel</h1>
-            <p>Your account has been successfully created!</p>
+            <h1>🎉WELCOME ${user.username}</h1>
+            <p>Your Account Has Been Created</p>
           </div>
           
           <div class="content">
