@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import sendEmail from "./email.js";
 import Activity from "../models/Activity.js";
 
-
 export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -57,7 +56,10 @@ export const registerUser = async (req, res) => {
           performedBy: req.user.id,
           targetUser: user._id,
         });
-        console.log("✅ Activity log created for user creation by admin:", req.user.username);
+        console.log(
+          "✅ Activity log created for user creation by admin:",
+          req.user.username,
+        );
       } catch (err) {
         console.log("❌ Activity log failed:", err.message);
       }
@@ -72,7 +74,7 @@ export const registerUser = async (req, res) => {
         },
       },
       process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key",
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     // ✅ 8. Send response FIRST
@@ -89,7 +91,9 @@ export const registerUser = async (req, res) => {
     });
 
     // ✅ 9. Send Email in Background (NON-BLOCKING 🚀)
-    const emailSubject = process.env.ADMIN_EMAIL_SUBJECT || "Welcome! Your Account Has Been Created";
+    const emailSubject =
+      process.env.ADMIN_EMAIL_SUBJECT ||
+      "Welcome! Your Account Has Been Created";
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -191,7 +195,7 @@ export const registerUser = async (req, res) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎉WELCOME ${user.username}</h1>
+            <h1>🎉Welcome ${user.username}</h1>
             <p>Your Account Has Been Created</p>
           </div>
           
@@ -214,49 +218,53 @@ export const registerUser = async (req, res) => {
                 <span class="credential-value">${password}</span>
               </div>
             </div>
-            
-            <div class="warning">
-              <strong>⚠️ Security Notice:</strong> For your security, please change your password after your first login.
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL || 'https://admin-user-management-system.onrender.com'}/login.html" class="login-btn">
-                🚀 Login to Your Account
-              </a>
-            </div>
-          </div>
           
+          </div>
+
           <div class="footer">
-            <p>If you have any questions or didn't request this account, please contact the system administrator.</p>
-            <p>© 2026 Admin Panel. All rights reserved.</p>
+            <p>If you have any questions or didn't request this account, please contact the system administrator.</p
           </div>
         </div>
       </body>
       </html>
     `;
-    
+
     // 📧 Send Email with Enhanced Error Handling
     console.log("📧 Attempting to send welcome email to:", user.email);
     sendEmail({
       email: user.email,
       subject: emailSubject,
       message: `Username: ${user.username}\nEmail: ${user.email}\nPassword: ${password}`,
-      html: emailHtml
+      html: emailHtml,
     })
       .then((res) => {
         if (res && res.success) {
-          console.log("✅ Welcome email sent successfully to:", user.email, "Message ID:", res?.messageId);
+          console.log(
+            "✅ Welcome email sent successfully to:",
+            user.email,
+            "Message ID:",
+            res?.messageId,
+          );
         } else {
-          console.log("⚠️ Email service returned success=false, but user was created successfully");
-          console.log("📧 Email details:", res?.message || "No message provided");
+          console.log(
+            "⚠️ Email service returned success=false, but user was created successfully",
+          );
+          console.log(
+            "📧 Email details:",
+            res?.message || "No message provided",
+          );
         }
       })
       .catch((err) => {
-        console.log("❌ Email sending failed (but user creation succeeded):", err.message);
-        console.log("📧 User account created successfully, email will be retried later");
+        console.log(
+          "❌ Email sending failed (but user creation succeeded):",
+          err.message,
+        );
+        console.log(
+          "📧 User account created successfully, email will be retried later",
+        );
         // Don't throw error - user creation is successful
       });
-
   } catch (error) {
     console.error("Registration error:", error);
 
@@ -284,7 +292,7 @@ export const registerUser = async (req, res) => {
       message: "Server error during registration",
     });
   }
-};// @route   POST /api/auth/login
+}; // @route   POST /api/auth/login
 // @access  Public
 // @desc    Login user
 // @route   POST /api/auth/login
@@ -311,11 +319,11 @@ export const loginUser = async (req, res) => {
     const users = await User.findOne({ email: bodyData.email });
 
     console.log("🔍 Login Debug - Email searched:", bodyData.email);
-    console.log("🔍 Login Debug - User found:", users ? 'YES' : 'NO');
+    console.log("🔍 Login Debug - User found:", users ? "YES" : "NO");
     if (users) {
-        console.log("🔍 Login Debug - User ID:", users._id);
-        console.log("🔍 Login Debug - User Role:", users.role);
-        console.log("🔍 Login Debug - User Email:", users.email);
+      console.log("🔍 Login Debug - User ID:", users._id);
+      console.log("🔍 Login Debug - User Role:", users.role);
+      console.log("🔍 Login Debug - User Email:", users.email);
     }
     if (!users) {
       console.log("User Not Exist Kindly Register Your Account");
@@ -343,9 +351,13 @@ export const loginUser = async (req, res) => {
       },
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key", {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      payload,
+      process.env.JWT_SECRET || "MYAPP_Rohit_2026_Secure_Key",
+      {
+        expiresIn: "7d",
+      },
+    );
     console.log("token", token);
     // Remove password from output
     users.password = undefined;
@@ -381,7 +393,6 @@ export const getMe = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const forgotPassword = async (req, res) => {
   try {
@@ -537,36 +548,41 @@ export const resetPassword = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     // Add cache control headers to prevent caching
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     // Check if pagination parameters are provided
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const usePagination = req.query.page || req.query.limit;
     const search = req.query.search || "";
 
-    console.log("🔍 getAllUsers called with:", { page, limit, usePagination, search });
+    console.log("🔍 getAllUsers called with:", {
+      page,
+      limit,
+      usePagination,
+      search,
+    });
 
     if (usePagination) {
       // Pagination logic
       const skip = (page - 1) * limit;
-      
+
       // Build search query
       let searchQuery = {};
       if (search && search.trim()) {
         searchQuery = {
           $or: [
-            { username: { $regex: search.trim(), $options: 'i' } },
-            { email: { $regex: search.trim(), $options: 'i' } },
-            { role: { $regex: search.trim(), $options: 'i' } }
-          ]
+            { username: { $regex: search.trim(), $options: "i" } },
+            { email: { $regex: search.trim(), $options: "i" } },
+            { role: { $regex: search.trim(), $options: "i" } },
+          ],
         };
       }
-      
+
       const totalUsers = await User.countDocuments(searchQuery);
-      
+
       const users = await User.find(searchQuery)
         .select("-password")
         .skip(skip)
@@ -596,16 +612,20 @@ export const getAllUsers = async (req, res) => {
       if (search && search.trim()) {
         searchQuery = {
           $or: [
-            { username: { $regex: search.trim(), $options: 'i' } },
-            { email: { $regex: search.trim(), $options: 'i' } },
-            { role: { $regex: search.trim(), $options: 'i' } }
-          ]
+            { username: { $regex: search.trim(), $options: "i" } },
+            { email: { $regex: search.trim(), $options: "i" } },
+            { role: { $regex: search.trim(), $options: "i" } },
+          ],
         };
       }
-      
+
       const users = await User.find(searchQuery).select("-password");
 
-      console.log("✅ Users fetched successfully (no pagination):", users.length, "users");
+      console.log(
+        "✅ Users fetched successfully (no pagination):",
+        users.length,
+        "users",
+      );
 
       res.status(200).json({
         success: true,
@@ -619,7 +639,7 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -686,31 +706,33 @@ export const updateUser = async (req, res) => {
 
     // Check if username is being updated and if it already exists
     if (username) {
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         username: username,
-        _id: { $ne: userId } // Exclude current user from check
+        _id: { $ne: userId }, // Exclude current user from check
       });
-      
+
       if (existingUser) {
         return res.status(409).json({
           success: false,
           error: "USERNAME_EXISTS",
-          message: "Username is already assigned to another user account. Username must be unique across the system."
+          message:
+            "Username is already assigned to another user account. Username must be unique across the system.",
         });
       }
     }
 
     // Check if email is being updated and if it already exists
     if (email) {
-      const existingEmail = await User.findOne({ 
+      const existingEmail = await User.findOne({
         email: email,
-        _id: { $ne: userId } // Exclude current user from check
+        _id: { $ne: userId }, // Exclude current user from check
       });
-      
+
       if (existingEmail) {
         return res.status(409).json({
           success: false,
-          message: "Email conflict: The specified email address is already registered in the system. Each email must be unique.",
+          message:
+            "Email conflict: The specified email address is already registered in the system. Each email must be unique.",
         });
       }
     }
@@ -725,7 +747,7 @@ export const updateUser = async (req, res) => {
         message: "User not found",
       });
     }
-    
+
     // Create activity log for user update
     try {
       const changes = [];
@@ -738,9 +760,10 @@ export const updateUser = async (req, res) => {
       if (req.body.role && req.body.role !== user.role) {
         changes.push(`role to ${req.body.role}`);
       }
-      
-      const changeDescription = changes.length > 0 ? changes.join(', ') : 'profile information';
-      
+
+      const changeDescription =
+        changes.length > 0 ? changes.join(", ") : "profile information";
+
       await Activity.create({
         action: "USER_UPDATED",
         description: `Admin ${req.user.username} updated ${user.username}'s ${changeDescription}`,
@@ -751,14 +774,13 @@ export const updateUser = async (req, res) => {
     } catch (err) {
       console.log("❌ Activity log failed for user update:", err.message);
     }
-    
+
     console.log("user", user);
     res.status(200).json({
       success: true,
       user,
-      message: "Updated successfully"
+      message: "Updated successfully",
     });
-
   } catch (err) {
     console.error("Update user error:", err);
     res.status(500).json({
@@ -787,17 +809,20 @@ export const deleteUser = async (req, res) => {
     }
 
     console.log("🗑️ DELETE USER - Finding user in database...");
-    console.log("🗑️ DELETE USER - Database connection state:", mongoose.connection.readyState);
+    console.log(
+      "🗑️ DELETE USER - Database connection state:",
+      mongoose.connection.readyState,
+    );
     console.log("🗑️ DELETE USER - Database name:", mongoose.connection.name);
-    
+
     const user = await User.findById(userId);
-    console.log("🗑️ DELETE USER - Query result:", user ? 'FOUND' : 'NOT FOUND');
-    
+    console.log("🗑️ DELETE USER - Query result:", user ? "FOUND" : "NOT FOUND");
+
     if (user) {
       console.log("🗑️ DELETE USER - Found user details:", {
         id: user._id,
         username: user.username,
-        email: user.email
+        email: user.email,
       });
     }
 
@@ -811,7 +836,7 @@ export const deleteUser = async (req, res) => {
 
     console.log("✅ DELETE USER - User found:", user.username, user.email);
     console.log("🗑️ DELETE USER - Deleting user...");
-    
+
     // Create activity log before deletion
     try {
       await Activity.create({
@@ -824,7 +849,7 @@ export const deleteUser = async (req, res) => {
     } catch (err) {
       console.log("❌ Activity log failed for user deletion:", err.message);
     }
-    
+
     await User.findByIdAndDelete(userId);
 
     console.log("✅ DELETE USER - User deleted successfully");
@@ -854,7 +879,7 @@ export const updateProfile = async (req, res) => {
 
     const updatedUser = await user.save();
 
-    console.log("updateUser" ,updatedUser)
+    console.log("updateUser", updatedUser);
 
     res.json({
       _id: updatedUser._id,
@@ -867,7 +892,6 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 export const changePassword = async (req, res) => {
   try {
@@ -909,17 +933,17 @@ export const getUserActivities = async (req, res) => {
 
     // Build search query
     let query = {};
-    
+
     // Add action filter if specified
     if (action && action.trim()) {
       query.action = action.trim();
     }
-    
+
     // Add search filter if search is provided
     if (search && search.trim()) {
       query.$or = [
-        { action: { $regex: search.trim(), $options: 'i' } },
-        { description: { $regex: search.trim(), $options: 'i' } }
+        { action: { $regex: search.trim(), $options: "i" } },
+        { description: { $regex: search.trim(), $options: "i" } },
       ];
     }
 
@@ -940,23 +964,23 @@ export const getUserActivities = async (req, res) => {
       timestamp: item.createdAt,
 
       performedBy: {
-        name: item.performedBy?.username || 'Unknown',
-        email: item.performedBy?.email || 'N/A',
-        role: item.performedBy?.role || 'N/A'
+        name: item.performedBy?.username || "Unknown",
+        email: item.performedBy?.email || "N/A",
+        role: item.performedBy?.role || "N/A",
       },
 
       targetUser: {
-        name: item.targetUser?.username || 'Unknown',
-        email: item.targetUser?.email || 'N/A',
-        role: item.targetUser?.role || 'N/A'
-      }
+        name: item.targetUser?.username || "Unknown",
+        email: item.targetUser?.email || "N/A",
+        role: item.targetUser?.role || "N/A",
+      },
     }));
 
     // Get counts for each action type
     const [createdCount, updatedCount, deletedCount] = await Promise.all([
       Activity.countDocuments({ action: "USER_CREATED" }),
       Activity.countDocuments({ action: "USER_UPDATED" }),
-      Activity.countDocuments({ action: "USER_DELETED" })
+      Activity.countDocuments({ action: "USER_DELETED" }),
     ]);
 
     res.json({
@@ -968,25 +992,29 @@ export const getUserActivities = async (req, res) => {
       actionCounts: {
         USER_CREATED: createdCount,
         USER_UPDATED: updatedCount,
-        USER_DELETED: deletedCount
-      }
+        USER_DELETED: deletedCount,
+      },
     });
-
   } catch (error) {
     console.error("Error in getUserActivities:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Server error while fetching activities" 
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error while fetching activities",
     });
   }
 };
-export const createActivity = async ({ action, description, performedBy, targetUser }) => {
+export const createActivity = async ({
+  action,
+  description,
+  performedBy,
+  targetUser,
+}) => {
   try {
     await Activity.create({
       action,
       description,
       performedBy,
-      targetUser
+      targetUser,
     });
   } catch (error) {
     console.log("Activity log error:", error);
